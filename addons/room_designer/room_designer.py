@@ -105,31 +105,155 @@ def get_folder_enum_previews(path,key):
     return key.my_previews
 
 
-preview_collections["floor_material_categories"] = create_image_preview_collection()   
-preview_collections["floor_materials"] = create_image_preview_collection()   
+preview_collections["room_material_categories"] = create_image_preview_collection()   
+preview_collections["room_materials"] = create_image_preview_collection()   
  
-def enum_flooring_categories(self,context):
+def enum_room_material_categories(self,context):
     if context is None:
         return []
      
-    icon_dir = os.path.join(os.path.dirname(__file__),"assets","Floor Materials")
-    pcoll = preview_collections["floor_material_categories"]
+    icon_dir = os.path.join(os.path.dirname(__file__),"assets","Room Materials")
+    pcoll = preview_collections["room_material_categories"]
     return get_folder_enum_previews(icon_dir,pcoll)
  
-def enum_flooring(self,context):
+def enum_room_materials(self,context):
     if context is None:
         return []
 
-    icon_dir = os.path.join(os.path.dirname(__file__),"assets","Floor Materials",self.flooring_category)
-    pcoll = preview_collections["floor_materials"]
+    icon_dir = os.path.join(os.path.dirname(__file__),"assets","Room Materials",self.room_material_category)
+    pcoll = preview_collections["room_materials"]
     return get_image_enum_previews(icon_dir,pcoll)
+
+def update_room_material_category(self,context):
+    if preview_collections["room_materials"]:
+        bpy.utils.previews.remove(preview_collections["room_materials"])
+        preview_collections["room_materials"] = create_image_preview_collection()     
+        
+    enum_room_materials(self,context)
+
+
+preview_collections["entry_door_categories"] = create_image_preview_collection()   
+preview_collections["entry_doors"] = create_image_preview_collection()   
  
-def update_floring_category(self,context):
-    if preview_collections["floor_materials"]:
-        bpy.utils.previews.remove(preview_collections["floor_materials"])
-        preview_collections["floor_materials"] = create_image_preview_collection()     
-         
-    enum_flooring(self,context)
+def enum_entry_door_categories(self,context):
+    if context is None:
+        return []
+     
+    icon_dir = os.path.join(os.path.dirname(__file__),"assets","Entry Doors")
+    pcoll = preview_collections["entry_door_categories"]
+    return get_folder_enum_previews(icon_dir,pcoll)
+ 
+def enum_entry_doors(self,context):
+    if context is None:
+        return []
+
+    icon_dir = os.path.join(os.path.dirname(__file__),"assets","Entry Doors",self.entry_door_category)
+    pcoll = preview_collections["entry_doors"]
+    return get_image_enum_previews(icon_dir,pcoll)
+
+def update_entry_door_category(self,context):
+    if preview_collections["entry_doors"]:
+        bpy.utils.previews.remove(preview_collections["entry_doors"])
+        preview_collections["entry_doors"] = create_image_preview_collection()     
+        
+    enum_entry_doors(self,context)
+
+preview_collections["furniture_categories"] = create_image_preview_collection()   
+preview_collections["furniture"] = create_image_preview_collection()   
+ 
+def enum_furniture_categories(self,context):
+    if context is None:
+        return []
+     
+    icon_dir = os.path.join(os.path.dirname(__file__),"assets","Furniture")
+    pcoll = preview_collections["furniture_categories"]
+    return get_folder_enum_previews(icon_dir,pcoll)
+ 
+def enum_furniture(self,context):
+    if context is None:
+        return []
+
+    icon_dir = os.path.join(os.path.dirname(__file__),"assets","Furniture",self.furniture_category)
+    pcoll = preview_collections["furniture"]
+    return get_image_enum_previews(icon_dir,pcoll)
+
+def update_furniture_category(self,context):
+    if preview_collections["furniture"]:
+        bpy.utils.previews.remove(preview_collections["furniture"])
+        preview_collections["furniture"] = create_image_preview_collection()     
+        
+    enum_furniture(self,context)
+
+preview_collections["molding_categories"] = create_image_preview_collection()   
+preview_collections["molding"] = create_image_preview_collection()   
+ 
+def enum_molding_categories(self,context):
+    if context is None:
+        return []
+     
+    icon_dir = os.path.join(os.path.dirname(__file__),"assets","Molding")
+    pcoll = preview_collections["molding_categories"]
+    return get_folder_enum_previews(icon_dir,pcoll)
+ 
+def enum_molding(self,context):
+    if context is None:
+        return []
+
+    icon_dir = os.path.join(os.path.dirname(__file__),"assets","Molding",self.molding_category)
+    pcoll = preview_collections["molding"]
+    return get_image_enum_previews(icon_dir,pcoll)
+
+def update_molding_category(self,context):
+    if preview_collections["molding"]:
+        bpy.utils.previews.remove(preview_collections["molding"])
+        preview_collections["molding"] = create_image_preview_collection()     
+        
+    enum_molding(self,context)
+
+preview_collections["windows_categories"] = create_image_preview_collection()   
+preview_collections["windows"] = create_image_preview_collection()   
+ 
+def enum_windows_categories(self,context):
+    if context is None:
+        return []
+     
+    icon_dir = os.path.join(os.path.dirname(__file__),"assets","Windows")
+    pcoll = preview_collections["windows_categories"]
+    return get_folder_enum_previews(icon_dir,pcoll)
+ 
+def enum_windows(self,context):
+    if context is None:
+        return []
+
+    icon_dir = os.path.join(os.path.dirname(__file__),"assets","Windows",self.window_category)
+    pcoll = preview_collections["windows"]
+    return get_image_enum_previews(icon_dir,pcoll)
+
+def update_windows_category(self,context):
+    if preview_collections["windows"]:
+        bpy.utils.previews.remove(preview_collections["windows"])
+        preview_collections["windows"] = create_image_preview_collection()     
+        
+    enum_windows(self,context)
+
+def update_show_wall_names(self,context):
+    for obj in bpy.data.objects:
+        if "ISWALL" in obj:
+            obj.show_name = self.show_wall_names
+
+def update_show_wall_empties(self,context):
+    for obj in bpy.data.objects:
+        if "ISWALL" in obj:
+            if obj.parent:
+                if "ISBP" in obj.parent:
+                    obj.parent.hide = not self.show_wall_obj_bp
+                for child in obj.parent.children:
+                    if "ISXDIM" in child:
+                        child.hide = not self.show_wall_obj_x
+                    if "ISYDIM" in child:
+                        child.hide = not self.show_wall_obj_y
+                    if "ISZDIM" in child:
+                        child.hide = not self.show_wall_obj_z
 
 def get_selection_point(context, event, ray_max=10000.0,objects=None,floor=None):
     """Gets the point to place an object based on selection"""
@@ -213,36 +337,82 @@ class PROPS_Room_Builder(bpy.types.PropertyGroup):
     wall_height = bpy.props.FloatProperty(name="Wall Height",default=unit.inch(108),unit='LENGTH')
     wall_depth = bpy.props.FloatProperty(name="Wall Depth",default=unit.inch(6),unit='LENGTH')
     
-    show_wall_dimensions = bpy.props.BoolProperty(name="Show Dimensions",default=True)
+    show_wall_dimensions = bpy.props.BoolProperty(name="Show Wall Dimensions",default=True)
     
     room_builder_tabs = bpy.props.EnumProperty(name="Room Builder Tabs",
         items=[('MAIN',"Main Options","Displays the Main Room Builder Options"),
-               ('PROPS',"Properties","Products"),
-               ('2D',"2D Views","Inserts")],
+               ('LIBRARY',"Library","Library of Room Assets"),
+               ('2D',"2D Views","Creates 2D Views For your Room")],
         default='MAIN')
     
-    show_wall_names = bpy.props.BoolProperty(name="Show Names",default=True)
-    show_wall_obj_bp = bpy.props.BoolProperty(name="Show Wall BP Object",default=False)
-    show_wall_obj_x = bpy.props.BoolProperty(name="Show Wall X Object",default=False)
-    show_wall_obj_y = bpy.props.BoolProperty(name="Show Wall Y Object",default=False)
-    show_wall_obj_z = bpy.props.BoolProperty(name="Show Wall Z Object",default=False)
+    show_wall_names = bpy.props.BoolProperty(name="Show Wall Names",default=True,update=update_show_wall_names)
+    show_wall_obj_bp = bpy.props.BoolProperty(name="Show Wall BP Object",default=False,update=update_show_wall_empties)
+    show_wall_obj_x = bpy.props.BoolProperty(name="Show Wall X Object",default=False,update=update_show_wall_empties)
+    show_wall_obj_y = bpy.props.BoolProperty(name="Show Wall Y Object",default=False,update=update_show_wall_empties)
+    show_wall_obj_z = bpy.props.BoolProperty(name="Show Wall Z Object",default=False,update=update_show_wall_empties)
     
     test_object = bpy.props.PointerProperty(name="Wall Depth",type=bpy.types.Object)
     
-    show_expanded_material = bpy.props.BoolProperty(name="Show Expanded Material",default=False)
+    #------ENUM ENTRY DOOR LIBRARY PROPS
     
-    flooring_category = bpy.props.EnumProperty(name="Flooring Category",
-                                               items=enum_flooring_categories,
-                                               update=update_floring_category)
+    show_expanded_entry_door = bpy.props.BoolProperty(name="Show Expanded Entry Door",default=False)
+    
+    entry_door_category = bpy.props.EnumProperty(name="Entry Door Category",
+                                                 items=enum_entry_door_categories,
+                                                 update=update_entry_door_category)
      
-    flooring_material = bpy.props.EnumProperty(name="Flooring Material",
-                                               items=enum_flooring)    
+    entry_door = bpy.props.EnumProperty(name="Entry Door",
+                                        items=enum_entry_doors)    
+    
+    #------ENUM FURNITURE LIBRARY PROPS
+    
+    show_expanded_furniture = bpy.props.BoolProperty(name="Show Expanded Furniture",default=False)
+    
+    furniture_category = bpy.props.EnumProperty(name="Furniture Category",
+                                               items=enum_furniture_categories,
+                                               update=update_furniture_category)
+     
+    furniture = bpy.props.EnumProperty(name="Furniture",
+                                       items=enum_furniture)        
+    
+    #------ENUM MOLDING LIBRARY PROPS
+    
+    show_expanded_molding = bpy.props.BoolProperty(name="Show Expanded Molding",default=False)
+    
+    molding_category = bpy.props.EnumProperty(name="Molding Category",
+                                               items=enum_molding_categories,
+                                               update=update_molding_category)
+     
+    molding = bpy.props.EnumProperty(name="Molding",
+                                     items=enum_molding)     
+    
+    #------ENUM MATERIAL LIBRARY PROPS
+    
+    show_expanded_room_material = bpy.props.BoolProperty(name="Show Expanded Room Material",default=False)
+    
+    room_material_category = bpy.props.EnumProperty(name="Room Material Category",
+                                               items=enum_room_material_categories,
+                                               update=update_room_material_category)
+     
+    room_material = bpy.props.EnumProperty(name="Room Material",
+                                               items=enum_room_materials)      
+    
+    #------ENUM WINDOWS LIBRARY PROPS
+    
+    show_expanded_window = bpy.props.BoolProperty(name="Show Expanded Window",default=False)
+    
+    window_category = bpy.props.EnumProperty(name="Window Category",
+                                             items=enum_windows_categories,
+                                             update=update_windows_category)
+    
+    window = bpy.props.EnumProperty(name="Window",
+                                    items=enum_windows)      
     
 class PANEL_Room_Builder_Library(bpy.types.Panel):
     bl_space_type = "VIEW_3D"
     bl_region_type = "TOOLS"
     bl_context = "objectmode"
-    bl_label = "Room Builder"
+    bl_label = "Room Designer"
     bl_category = "Design Tools"
     
     def draw_main_options(self,context,layout,rm_props):
@@ -252,76 +422,6 @@ class PANEL_Room_Builder_Library(bpy.types.Panel):
         row = box.row(align=True)  
         row.prop(rm_props,"wall_height",text="Wall Height")
         row.prop(rm_props,"wall_depth",text="Wall Depth") 
-        row = box.row()    
-        row.scale_y = 1.2   
-        row.operator("room_builder.draw_wall",text="Draw Walls",icon='GREASEPENCIL')     
-
-        row = box.row(align=True)
-        row.label("Draw Shapes:",icon='MESH_GRID')     
-        row = box.row()    
-        row.scale_y = 1.2   
-        row.operator("room_builder.draw_cube",text="Draw Plane",icon='MESH_PLANE') #TODO
-        row.operator("room_builder.draw_cube",text="Draw Cube",icon='MESH_CUBE')
-
-        box = layout.box()
-        row = box.row()
-        row.label("Place Windows and Doors:",icon='MESH_CUBE')
-        row.label("Press W")
-        row = box.row(align=True)
-        row.prop(rm_props,"show_expanded_material",text="",emboss=False,icon='TRIA_DOWN' if rm_props.show_expanded_material else 'TRIA_RIGHT')
-        row.separator()
-        row.prop(rm_props,'flooring_category',text="",icon='FILE_FOLDER')        
-        row.prop(rm_props,'flooring_material',text="")    
-        row.operator('object.lamp_add',text="",icon='FILE_REFRESH')
-        row.operator('object.lamp_add',text="",icon='BRUSH_DATA')
-        if rm_props.show_expanded_material:
-            box.template_icon_view(rm_props,"flooring_material",show_labels=True)  
-
-        box = layout.box()
-        row = box.row()
-        row.label("Place Furniture:",icon='MESH_CUBE')
-        row = box.row(align=True)
-        row.prop(rm_props,"show_expanded_material",text="",emboss=False,icon='TRIA_DOWN' if rm_props.show_expanded_material else 'TRIA_RIGHT')
-        row.separator()
-        row.prop(rm_props,'flooring_category',text="",icon='FILE_FOLDER')        
-        row.prop(rm_props,'flooring_material',text="")    
-        row.operator('object.lamp_add',text="",icon='FILE_REFRESH')
-        row.operator('object.lamp_add',text="",icon='BRUSH_DATA')
-        if rm_props.show_expanded_material:
-            box.template_icon_view(rm_props,"flooring_material",show_labels=True)  
-
-        box = layout.box()
-        row = box.row()
-        row.label("Room Materials:",icon='MATERIAL_DATA')
-        row = box.row(align=True)
-        row.prop(rm_props,"show_expanded_material",text="",emboss=False,icon='TRIA_DOWN' if rm_props.show_expanded_material else 'TRIA_RIGHT')
-        row.separator()        
-        row.prop(rm_props,'flooring_category',text="",icon='FILE_FOLDER')        
-        row.prop(rm_props,'flooring_material',text="")    
-        row.operator('object.lamp_add',text="",icon='FILE_REFRESH')
-        row.operator('object.lamp_add',text="",icon='BRUSH_DATA')
-        if rm_props.show_expanded_material:
-            box.template_icon_view(rm_props,"flooring_material",show_labels=True)
-            
-        box = layout.box()
-        box.label("Room Lighting:",icon='OUTLINER_OB_LAMP')
-        row = box.row()
-        row.scale_y = 1.2
-        row.operator('object.lamp_add',text="Place Spot Lamp",icon='LAMP_SPOT').type = 'AREA'
-        row.operator('object.lamp_add',text="Place Area Lamp",icon='LAMP_AREA').type = 'AREA'
-    
-    def draw_props(self,context,layout,rm_props):
-        box = layout.box()
-        row = box.row()
-        row.label("Wall Options:",icon='MOD_BUILD')
-        row = box.row(align=True)
-
-        row = box.row(align=True)
-        row.operator('object.lamp_add',text="Show Selected Wall Properties",icon='SETTINGS').type = 'AREA'
-    
-        box = layout.box()
-        row = box.row()
-        row.label("Display Settings:",icon='RESTRICT_VIEW_OFF')
         row = box.row()
         row.prop(rm_props,"show_wall_dimensions")
         row.prop(rm_props,"show_wall_names")
@@ -332,6 +432,91 @@ class PANEL_Room_Builder_Library(bpy.types.Panel):
         row.prop(rm_props,"show_wall_obj_x",text="X")
         row.prop(rm_props,"show_wall_obj_y",text="Y")
         row.prop(rm_props,"show_wall_obj_z",text="Z")
+        
+        row = box.row()    
+        row.scale_y = 1.2   
+        row.operator("room_builder.draw_wall",text="Draw Walls",icon='GREASEPENCIL')     
+        
+        box = layout.box()
+        row = box.row(align=True)
+        row.label("Draw Shapes:",icon='MESH_GRID')     
+        row = box.row()
+        row.scale_y = 1.2
+        row.operator("room_builder.draw_mesh",text="Draw Plane",icon='MESH_PLANE')
+        row.operator("blender_design.temp_operator",text="Draw Cube",icon='MESH_CUBE') #TODO
+        
+        box = layout.box()
+        box.label("Room Lighting:",icon='OUTLINER_OB_LAMP')
+        row = box.row()
+        row.scale_y = 1.2
+        row.operator('blender_design.temp_operator',text="Place Spot Lamp",icon='LAMP_SPOT').type = 'AREA'
+        row.operator('blender_design.temp_operator',text="Place Area Lamp",icon='LAMP_AREA').type = 'AREA'
+    
+    def draw_library(self,context,layout,rm_props):
+        box = layout.box()
+        row = box.row()
+        row.label("Room Library:",icon='MOD_BUILD')
+        row = box.row(align=True)
+
+        box = layout.box()
+        row = box.row()
+        row.label("Entry Doors: (D)",icon='MESH_CUBE')
+        row = box.row(align=True)
+        row.prop(rm_props,"show_expanded_entry_door",text="",emboss=False,icon='TRIA_DOWN' if rm_props.show_expanded_entry_door else 'TRIA_RIGHT')
+        row.separator()
+        row.prop(rm_props,'entry_door_category',text="",icon='FILE_FOLDER')        
+        row.prop(rm_props,'entry_door',text="")
+        row.operator('blender_design.temp_operator',text="",icon='BRUSH_DATA')
+        if rm_props.show_expanded_entry_door:
+            box.template_icon_view(rm_props,"entry_door",show_labels=True)  
+
+        box = layout.box()
+        row = box.row()
+        row.label("Furniture: (F)" ,icon='MESH_CUBE')
+        row = box.row(align=True)
+        row.prop(rm_props,"show_expanded_furniture",text="",emboss=False,icon='TRIA_DOWN' if rm_props.show_expanded_furniture else 'TRIA_RIGHT')
+        row.separator()
+        row.prop(rm_props,'furniture_category',text="",icon='FILE_FOLDER')        
+        row.prop(rm_props,'furniture',text="")
+        row.operator('blender_design.temp_operator',text="",icon='BRUSH_DATA')
+        if rm_props.show_expanded_furniture:
+            box.template_icon_view(rm_props,"furniture",show_labels=True)  
+
+        box = layout.box()
+        row = box.row()
+        row.label("Molding: (O)" ,icon='MESH_CUBE')
+        row = box.row(align=True)
+        row.prop(rm_props,"show_expanded_molding",text="",emboss=False,icon='TRIA_DOWN' if rm_props.show_expanded_molding else 'TRIA_RIGHT')
+        row.separator()
+        row.prop(rm_props,'molding_category',text="",icon='FILE_FOLDER')        
+        row.prop(rm_props,'molding',text="")
+        row.operator('blender_design.temp_operator',text="",icon='BRUSH_DATA')
+        if rm_props.show_expanded_molding:
+            box.template_icon_view(rm_props,"molding",show_labels=True)
+            
+        box = layout.box()
+        row = box.row()
+        row.label("Room Materials: (R)",icon='MESH_CUBE')
+        row = box.row(align=True)
+        row.prop(rm_props,"show_expanded_room_material",text="",emboss=False,icon='TRIA_DOWN' if rm_props.show_expanded_room_material else 'TRIA_RIGHT')
+        row.separator()
+        row.prop(rm_props,'room_material_category',text="",icon='FILE_FOLDER')        
+        row.prop(rm_props,'room_material',text="")
+        row.operator('blender_design.temp_operator',text="",icon='BRUSH_DATA')
+        if rm_props.show_expanded_room_material:
+            box.template_icon_view(rm_props,"room_material",show_labels=True)  
+
+        box = layout.box()
+        row = box.row()
+        row.label("Windows: (W)",icon='MATERIAL_DATA')
+        row = box.row(align=True)
+        row.prop(rm_props,"show_expanded_window",text="",emboss=False,icon='TRIA_DOWN' if rm_props.show_expanded_window else 'TRIA_RIGHT')
+        row.separator()
+        row.prop(rm_props,'window_category',text="",icon='FILE_FOLDER')        
+        row.prop(rm_props,'window',text="")
+        row.operator('blender_design.temp_operator',text="",icon='BRUSH_DATA')
+        if rm_props.show_expanded_window:
+            box.template_icon_view(rm_props,"window",show_labels=True)
     
     def draw(self, context):
         layout = self.layout
@@ -340,19 +525,18 @@ class PANEL_Room_Builder_Library(bpy.types.Panel):
         main_box = layout.box()
         row = main_box.row(align=True)
         row.prop_enum(rm_props, "room_builder_tabs", 'MAIN', icon='INFO', text="Main") 
-        row.prop_enum(rm_props, "room_builder_tabs", 'PROPS', icon='RESTRICT_VIEW_OFF', text="Properties") 
+        row.prop_enum(rm_props, "room_builder_tabs", 'LIBRARY', icon='RESTRICT_VIEW_OFF', text="Library") 
         row.prop_enum(rm_props, "room_builder_tabs", '2D', icon='MATERIAL', text="2D Views")         
 
         col = main_box.column(align=True)
         
         if rm_props.room_builder_tabs == 'MAIN':
             self.draw_main_options(context, col, rm_props)
-        if rm_props.room_builder_tabs == 'PROPS':
-            self.draw_props(context,col,rm_props)
+        if rm_props.room_builder_tabs == 'LIBRARY':
+            self.draw_library(context,col,rm_props)
         if rm_props.room_builder_tabs == '2D':
             pass
 
-        
 class OPS_draw_walls(bpy.types.Operator):
     bl_idname = "room_builder.draw_wall"
     bl_label = "Draws Walls"
@@ -391,8 +575,10 @@ class OPS_draw_walls(bpy.types.Operator):
         self.wall = Assembly()
         self.wall.create_assembly()
         obj_mesh = self.wall.add_mesh("wall")
-        self.wall.obj_bp.location = self.starting_point
+        obj_mesh["ISWALL"] = True
         obj_mesh.draw_type = 'WIRE'
+        obj_mesh.lock_location = (True,True,True)
+        self.wall.obj_bp.location = self.starting_point
         self.wall.obj_z.location.z = DEFAULT_ROOM_HEIGHT
         self.wall.obj_y.location.y = DEFAULT_WALL_DEPTH
         if self.previous_wall:
@@ -582,9 +768,9 @@ class OPS_draw_walls(bpy.types.Operator):
         context.window_manager.modal_handler_add(self)
         return {'RUNNING_MODAL'}
 
-class OPS_draw_cube(bpy.types.Operator):
-    bl_idname = "room_builder.draw_cube"
-    bl_label = "Draw Cube"
+class OPS_draw_mesh(bpy.types.Operator):
+    bl_idname = "room_builder.draw_mesh"
+    bl_label = "Draw Mesh"
     bl_options = {'UNDO'}
     
     #READONLY
@@ -664,7 +850,7 @@ class OPS_draw_cube(bpy.types.Operator):
         self.mouse_x = event.mouse_x
         self.mouse_y = event.mouse_y
         
-        selected_point, selected_obj = utils.get_selection_point(context,event,objects=self.ray_cast_objects)
+        selected_point, selected_obj = utils.get_selection_point(context,event)
         
         self.position_cube(selected_point)
 
@@ -693,6 +879,10 @@ class OPS_draw_cube(bpy.types.Operator):
         self.ray_cast_objects.append(self.drawing_plane)
 
     def invoke(self, context, event):
+        self.ray_cast_objects = []
+        for obj in bpy.data.objects:
+            if "ISWALL" in obj or "ISROOMMESH":
+                self.ray_cast_objects.append(obj)
         self.mouse_x = event.mouse_x
         self.mouse_y = event.mouse_y
         self._draw_handle = context.space_data.draw_handler_add(
@@ -705,10 +895,84 @@ class OPS_draw_cube(bpy.types.Operator):
         #CREATE CUBE
         self.cube = Assembly()
         self.cube.create_assembly()
-        self.cube.add_mesh("Cube")
+        mesh_obj = self.cube.add_mesh("RoomCube")
+        mesh_obj["ISROOMMESH"] = True
         self.cube.x_dim(value = 0)
         self.cube.y_dim(value = 0)
         self.cube.z_dim(value = 0)
+        
+        context.window_manager.modal_handler_add(self)
+        context.area.tag_redraw()
+        return {'RUNNING_MODAL'}
+
+class OPS_place_room_material(bpy.types.Operator):
+    bl_idname = "room_builder.place_room_material"
+    bl_label = "Place Room Material"
+    bl_options = {'UNDO'}
+    
+    #READONLY
+    _draw_handle = None
+    mouse_x = 0
+    mouse_y = 0
+    
+    material = None
+    
+    def cancel_drop(self,context):
+        self.finish(context)
+        
+    def finish(self,context):
+        context.space_data.draw_handler_remove(self._draw_handle, 'WINDOW')
+        context.window.cursor_set('DEFAULT')
+
+        context.area.tag_redraw()
+        return {'FINISHED'}
+
+    @staticmethod
+    def _window_region(context):
+        window_regions = [region
+                          for region in context.area.regions
+                          if region.type == 'WINDOW']
+        return window_regions[0]
+
+    def draw_opengl(self,context):     
+        region = self._window_region(context)
+        
+        help_box = TextBox(
+            x=0,y=0,
+            width=500,height=0,
+            border=10,margin=100,
+            message="Command Help:\nLEFT CLICK: Place Material\nRIGHT CLICK: Placement Options")
+        help_box.x = (self.mouse_x + (help_box.width) / 2 + 10) - region.x
+        help_box.y = (self.mouse_y - 10) - region.y
+
+        help_box.draw()
+            
+    def modal(self, context, event):
+        context.area.tag_redraw()
+        self.mouse_x = event.mouse_x
+        self.mouse_y = event.mouse_y
+        
+        selected_point, selected_obj = utils.get_selection_point(context,event)
+        
+        self.position_cube(selected_point)
+
+        if event.type in {'RIGHTMOUSE', 'ESC'}:
+            self.cancel_drop(context)
+            return {'CANCELLED'}
+        
+        if event.type in {'MIDDLEMOUSE', 'WHEELUPMOUSE', 'WHEELDOWNMOUSE'}:
+            return {'PASS_THROUGH'}        
+        
+        return {'RUNNING_MODAL'}
+
+    def get_material(self):
+        pass
+
+    def invoke(self, context, event):
+        self.mouse_x = event.mouse_x
+        self.mouse_y = event.mouse_y
+        self._draw_handle = context.space_data.draw_handler_add(
+            self.draw_opengl, (context,), 'WINDOW', 'POST_PIXEL')
         
         context.window_manager.modal_handler_add(self)
         context.area.tag_redraw()
@@ -718,12 +982,60 @@ class OPS_properties(bpy.types.Operator):
     bl_idname = "blender_design.properties"
     bl_label = "Properties"
 
+    obj = None
+
     @classmethod
     def poll(cls, context):
-        if context.object:
+        if "ISWALL" in context.object and context.object.parent:
+            return True
+        elif "ISROOMCUBE" in context.object and context.object.parent:
             return True
         else:
             return False
+
+    def check(self,context):
+        return True
+
+    def execute(self, context):
+        return {'FINISHED'}
+
+    def invoke(self,context,event):
+        wm = context.window_manager
+        self.obj = context.object
+        
+        return wm.invoke_props_dialog(self, width=400)
+
+    def draw_wall_properties(self,layout,wall):
+        layout.label(self.obj.name)
+        col = layout.column(align=True)
+        col.prop(wall.obj_x,'location',index=0,text="Wall Length")
+        col.prop(wall.obj_y,'location',index=1,text="Wall Depth")
+        col.prop(wall.obj_z,'location',index=2,text="Wall Height")        
+        layout.prop(wall.obj_bp,'location',text="")
+        layout.prop(wall.obj_bp,'rotation_euler',index=0,text="Rotation")
+
+    def draw_room_mesh(self,layout,wall):
+        layout.label(self.obj.name)
+        layout.prop(wall.obj_x,'location',index=0,text="Object Length")
+        layout.prop(wall.obj_y,'location',index=1,text="Object Width")
+        layout.prop(wall.obj_z,'location',index=2,text="Object Height")        
+        layout.prop(wall.obj_bp,'location')
+        layout.prop(wall.obj_bp,'rotation_euler',index=0,text="Rotation")
+
+    def draw(self, context):
+        layout = self.layout
+        box = layout.box()
+        assembly = Assembly(context.object.parent)
+        if "ISWALL" in context.object:
+            self.draw_wall_properties(box, assembly)
+        if "ISROOMMESH" in context.object:
+            self.draw_wall_properties(box, assembly)
+        
+        # OPERATOR: Apply Hooks or Edit Mesh
+
+class OPS_temp_operator(bpy.types.Operator):
+    bl_idname = "blender_design.temp_operator"
+    bl_label = "Temp Operator"
 
     def check(self,context):
         return True
@@ -737,15 +1049,18 @@ class OPS_properties(bpy.types.Operator):
 
     def draw(self, context):
         layout = self.layout
-        layout.label("SHOW PROPERTIES")
+        layout.label("This command has not been implemented yet :(")
+        
+        # OPERATOR: Apply Hooks or Edit Mesh
 
 def register():
     bpy.utils.register_class(PROPS_Room_Builder)
     bpy.utils.register_class(PANEL_Room_Builder_Library)
-        
+    
     bpy.utils.register_class(OPS_draw_walls)
-    bpy.utils.register_class(OPS_draw_cube)
+    bpy.utils.register_class(OPS_draw_mesh)
     bpy.utils.register_class(OPS_properties)
+    bpy.utils.register_class(OPS_temp_operator)
 
     bpy.types.Scene.room_builder = bpy.props.PointerProperty(type=PROPS_Room_Builder)
     
