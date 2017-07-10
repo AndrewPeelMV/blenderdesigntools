@@ -35,7 +35,7 @@ class Assembly:
     are parented to. The X, Y, and Dimension objects control 
     the size of the group.
     
-    The Base Point Object is tagged with "ISBASEPOINT"
+    The Base Point Object is tagged with "ISBP"
     The X Dimension is tagged with "ISXDIM"
     The Y Dimension is tagged with "ISYDIM"
     The Z Dimension is tagged with "ISZDIM"
@@ -61,11 +61,11 @@ class Assembly:
         if obj_bp:
             self.obj_bp = obj_bp
             for child in obj_bp.children:
-                if child["ISXDIM"]:
+                if "ISXDIM" in child:
                     self.obj_x = child
-                if child["ISYDIM"]:
+                if "ISYDIM" in child:
                     self.obj_y = child
-                if child["ISZDIM"]:
+                if "ISZDIM" in child:
                     self.obj_z = child
                 if self.obj_x and self.obj_y and self.obj_z:
                     break    
@@ -77,24 +77,27 @@ class Assembly:
         """
         
         self.obj_bp = bpy.data.objects.new("ASSEMBLY.Base_Point",None)
-        self.obj_bp.dtools.is_base_point = True
+        self.obj_bp["ISBP"] = True
         self.obj_bp.empty_draw_type = 'SPHERE'
         self.obj_bp.empty_draw_size = .05
         bpy.context.scene.objects.link(self.obj_bp)
         
         self.obj_x = bpy.data.objects.new("ASSEMBLY.X_DIM",None)
+        self.obj_x["ISXDIM"] = True
         self.obj_x.empty_draw_type = 'PLAIN_AXES'
         self.obj_x.empty_draw_size = .05
         bpy.context.scene.objects.link(self.obj_x)
-        self.obj_x .parent = self.obj_bp
+        self.obj_x.parent = self.obj_bp
         
         self.obj_y = bpy.data.objects.new("ASSEMBLY.Y_DIM",None)
+        self.obj_y["ISYDIM"] = True
         self.obj_y.empty_draw_type = 'CONE'
         self.obj_y.empty_draw_size = .05
         bpy.context.scene.objects.link(self.obj_y)
         self.obj_y.parent = self.obj_bp
         
         self.obj_z = bpy.data.objects.new("ASSEMBLY.Z_DIM",None)
+        self.obj_z["ISZDIM"] = True
         self.obj_z.empty_draw_type = 'SINGLE_ARROW'
         self.obj_z.empty_draw_size = .3
         bpy.context.scene.objects.link(self.obj_z)
