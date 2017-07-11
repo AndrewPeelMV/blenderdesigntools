@@ -449,8 +449,8 @@ class PANEL_Room_Builder_Library(bpy.types.Panel):
         box.label("Room Lighting:",icon='OUTLINER_OB_LAMP')
         row = box.row()
         row.scale_y = 1.2
-        row.operator('blender_design.temp_operator',text="Place Spot Lamp",icon='LAMP_SPOT').type = 'AREA'
-        row.operator('blender_design.temp_operator',text="Place Area Lamp",icon='LAMP_AREA').type = 'AREA'
+        row.operator('blender_design.temp_operator',text="Place Spot Lamp",icon='LAMP_SPOT')
+        row.operator('blender_design.temp_operator',text="Place Area Lamp",icon='LAMP_AREA')
     
     def draw_library(self,context,layout,rm_props):
         box = layout.box()
@@ -743,9 +743,8 @@ class OPS_draw_walls(bpy.types.Operator):
     def draw_menu(self,context):
         self.help_box.draw()
         self.help_box.raw_text = self.cursor_help_text
-        self.help_box.fit_box_width_to_text_lines()
-        self.help_box.x = self.mouse_x
-        self.help_box.y = self.mouse_y
+        self.help_box.x = self.mouse_x + (self.help_box.width/2) + 10
+        self.help_box.y = self.mouse_y + 10
         
     def execute(self,context):
         context.window.cursor_set('PAINT_BRUSH')
@@ -923,7 +922,7 @@ class OPS_place_room_material(bpy.types.Operator):
     def finish(self,context):
         context.space_data.draw_handler_remove(self._draw_handle, 'WINDOW')
         context.window.cursor_set('DEFAULT')
-
+        
         context.area.tag_redraw()
         return {'FINISHED'}
 

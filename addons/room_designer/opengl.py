@@ -208,7 +208,10 @@ class TextBox(object):
     
     def draw(self):
         blf.size(0, self.text_size, self.text_dpi)
-
+        
+        self.fit_box_width_to_text_lines()
+        self.fit_box_height_to_text_lines()
+        
         if (bpy.context.window.width, bpy.context.window.height) != self.window_dims:
             self.snap_to_corner(bpy.context, corner = [1,1])
             self.window_dims = (bpy.context.window.width, bpy.context.window.height)
