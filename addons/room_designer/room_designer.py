@@ -5,7 +5,7 @@ import os
 from . import unit, utils
 from .assembly import Assembly
 from bpy_extras import view3d_utils
-from .opengl import TextBox
+from .opengl import TextBox, Dimension
 
 DEFAULT_ROOM_HEIGHT = unit.inch(108)
 DEFAULT_WALL_DEPTH = unit.inch(6)
@@ -332,6 +332,32 @@ def get_selection_point(context, event, ray_max=10000.0,objects=None,floor=None)
                         
     return best_hit, best_obj    
     
+def draw_wall_dimensions(self,context):
+    context = bpy.context
+    region = context.region
+    rv3d = context.space_data.region_3d
+    scene = context.scene    
+    
+    if context.scene.room_builder.show_wall_dimensions:
+        walls = []
+        for obj in context.visible_objects:
+            if "ISWALL" in obj:
+                walls.append(obj)
+                 
+        for wall in walls:
+            bp = wall.parent
+            x = None
+            for child in bp.children:
+                if "ISXDIM" in child:
+                    x = child
+            
+            wall_dim = Dimension(region,rv3d)
+            wall_dim.draw(bp,x)
+    
+class WMPROPS_Room_Builder(bpy.types.PropertyGroup):   
+    
+    show_wall_dimensions = bpy.props.BoolProperty(name="Show Wall Dimensions",default=True) 
+    
 class PROPS_Room_Builder(bpy.types.PropertyGroup):
     
     wall_height = bpy.props.FloatProperty(name="Wall Height",default=unit.inch(108),unit='LENGTH')
@@ -571,16 +597,35 @@ class OPS_draw_walls(bpy.types.Operator):
     def __del__(self):
         bpy.context.area.header_text_set()
         
-    def create_wall(self):
+    def number_of_walls(self):
+        number = 0
+        for obj in bpy.data.objects:
+            if "ISWALL" in obj:
+                number += 1
+        return number
+
+    def create_wall(self,context):
+        props = get_roombuilder_props(context)
+        
+        number_of_walls = self.number_of_walls()
+        
         self.wall = Assembly()
         self.wall.create_assembly()
         obj_mesh = self.wall.add_mesh("wall")
         obj_mesh["ISWALL"] = True
         obj_mesh.draw_type = 'WIRE'
         obj_mesh.lock_location = (True,True,True)
+        obj_mesh.show_name = props.show_wall_names
+        self.wall.obj_bp.name = "BPWALL " + str(number_of_walls + 1)
+        obj_mesh.name = "Wall " + str(number_of_walls + 1)
         self.wall.obj_bp.location = self.starting_point
         self.wall.obj_z.location.z = DEFAULT_ROOM_HEIGHT
         self.wall.obj_y.location.y = DEFAULT_WALL_DEPTH
+        self.wall.obj_bp.hide = not props.show_wall_obj_bp
+        self.wall.obj_x.hide = not props.show_wall_obj_x
+        self.wall.obj_y.hide = not props.show_wall_obj_y
+        self.wall.obj_z.hide = not props.show_wall_obj_z
+        
         if self.previous_wall:
             constraint = self.wall.obj_bp.constraints.new('COPY_LOCATION')
             constraint.target = self.previous_wall.obj_x
@@ -666,7 +711,7 @@ class OPS_draw_walls(bpy.types.Operator):
     def place_first_wall(self):
         pass        
     
-    def place_wall(self):
+    def place_wall(self,context):
         if self.previous_wall:
             for child in self.wall.obj_bp.children:
                 child.draw_type = 'TEXTURED'
@@ -676,7 +721,7 @@ class OPS_draw_walls(bpy.types.Operator):
 
         if self.previous_wall:
             self.previous_wall = self.wall
-            self.create_wall()
+            self.create_wall(context)
         else:
             self.previous_wall = self.wall
 
@@ -730,7 +775,7 @@ class OPS_draw_walls(bpy.types.Operator):
             self.position_wall_base_point(selected_point)  
 
         if self.event_is_place_wall(event):
-            self.place_wall()
+            self.place_wall(context)
 
         if event.type in {'MIDDLEMOUSE', 'WHEELUPMOUSE', 'WHEELDOWNMOUSE'}:
             return {'PASS_THROUGH'}
@@ -744,16 +789,16 @@ class OPS_draw_walls(bpy.types.Operator):
         self.help_box.draw()
         self.help_box.raw_text = self.cursor_help_text
         self.help_box.x = self.mouse_x + (self.help_box.width/2) + 10
-        self.help_box.y = self.mouse_y + 10
+        self.help_box.y = self.mouse_y - 30
         
     def execute(self,context):
         context.window.cursor_set('PAINT_BRUSH')
         self._draw_handle = context.space_data.draw_handler_add(
             self.draw_menu, (context,), 'WINDOW', 'POST_PIXEL')        
         
-        self.help_box = TextBox(500,500,300,200,10,20, "Select Point to Draw Wall")
+        self.help_box = TextBox(500,500,300,200,10,100, "Select first point to draw wall")
         
-        self.create_wall()
+        self.create_wall(context)
         
         bpy.ops.mesh.primitive_plane_add()
         plane = context.active_object
@@ -1007,19 +1052,21 @@ class OPS_properties(bpy.types.Operator):
     def draw_wall_properties(self,layout,wall):
         layout.label(self.obj.name)
         col = layout.column(align=True)
+        col.prop(self.obj,'name',text="Wall Name")
+        col.separator()
         col.prop(wall.obj_x,'location',index=0,text="Wall Length")
         col.prop(wall.obj_y,'location',index=1,text="Wall Depth")
         col.prop(wall.obj_z,'location',index=2,text="Wall Height")        
-        layout.prop(wall.obj_bp,'location',text="")
-        layout.prop(wall.obj_bp,'rotation_euler',index=0,text="Rotation")
+        layout.prop(wall.obj_bp,'location',text="Location")
+        layout.prop(wall.obj_bp,'rotation_euler',index=2,text="Rotation")
 
     def draw_room_mesh(self,layout,wall):
         layout.label(self.obj.name)
         layout.prop(wall.obj_x,'location',index=0,text="Object Length")
         layout.prop(wall.obj_y,'location',index=1,text="Object Width")
         layout.prop(wall.obj_z,'location',index=2,text="Object Height")        
-        layout.prop(wall.obj_bp,'location')
-        layout.prop(wall.obj_bp,'rotation_euler',index=0,text="Rotation")
+        layout.prop(wall.obj_bp,'location',text="Location")
+        layout.prop(wall.obj_bp,'rotation_euler',text="Rotation")
 
     def draw(self, context):
         layout = self.layout
@@ -1031,6 +1078,55 @@ class OPS_properties(bpy.types.Operator):
             self.draw_wall_properties(box, assembly)
         
         # OPERATOR: Apply Hooks or Edit Mesh
+
+class OPS_toggle_wall_dimensions(bpy.types.Operator):
+    bl_idname = "room_builder.toggle_wall_dimensions"
+    bl_label = "Toggle Wall Dimensions"
+    bl_description = "Toggle visibility of the room dimensions"
+#     bl_category = 'Archimesh'
+
+    _handle = None  # keep function handler
+
+    # ----------------------------------
+    # Enable gl drawing adding handler
+    # ----------------------------------
+    @staticmethod
+    def handle_add(self, context):
+        if OPS_toggle_wall_dimensions._handle is None:
+            OPS_toggle_wall_dimensions._handle = bpy.types.SpaceView3D.draw_handler_add(draw_callback_px, (self, context),
+                                                                                      'WINDOW',
+                                                                                      'POST_PIXEL')
+            context.window_manager.room_builder.show_wall_dimensions = True
+
+    # ------------------------------------
+    # Disable gl drawing removing handler
+    # ------------------------------------
+    # noinspection PyUnusedLocal
+    @staticmethod
+    def handle_remove(self, context):
+        if OPS_toggle_wall_dimensions._handle is not None:
+            bpy.types.SpaceView3D.draw_handler_remove(OPS_toggle_wall_dimensions._handle, 'WINDOW')
+        OPS_toggle_wall_dimensions._handle = None
+        context.window_manager.room_builder.show_wall_dimensions = False
+
+    # ------------------------------
+    # Execute button action
+    # ------------------------------
+    def execute(self, context):
+        if context.area.type == 'VIEW_3D':
+            if context.window_manager.show_wall_dimensions is False:
+                self.handle_add(self, context)
+                context.area.tag_redraw()
+            else:
+                self.handle_remove(self, context)
+                context.area.tag_redraw()
+
+            return {'FINISHED'}
+        else:
+            self.report({'WARNING'},
+                        "View3D not found, cannot run operator")
+
+        return {'CANCELLED'}
 
 class OPS_temp_operator(bpy.types.Operator):
     bl_idname = "blender_design.temp_operator"
@@ -1053,6 +1149,7 @@ class OPS_temp_operator(bpy.types.Operator):
         # OPERATOR: Apply Hooks or Edit Mesh
 
 def register():
+    bpy.utils.register_class(WMPROPS_Room_Builder)
     bpy.utils.register_class(PROPS_Room_Builder)
     bpy.utils.register_class(PANEL_Room_Builder_Library)
     
@@ -1060,8 +1157,11 @@ def register():
     bpy.utils.register_class(OPS_draw_mesh)
     bpy.utils.register_class(OPS_properties)
     bpy.utils.register_class(OPS_temp_operator)
-
+    
+    bpy.types.WindowManager.room_builder = bpy.props.PointerProperty(type=WMPROPS_Room_Builder)
     bpy.types.Scene.room_builder = bpy.props.PointerProperty(type=PROPS_Room_Builder)
+    
+    bpy.types.SpaceView3D.draw_handler_add(draw_wall_dimensions, (None,None),'WINDOW','POST_PIXEL')
     
     wm = bpy.context.window_manager
     if wm.keyconfigs.addon:

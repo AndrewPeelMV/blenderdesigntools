@@ -2,8 +2,11 @@
 This script contains common opengl functions and classes
 
 """
-
+from . import unit
+import math
 import bpy, blf, bgl
+from mathutils import Vector
+from bpy_extras import view3d_utils
 
 def get_dpi():
     system_preferences = bpy.context.user_preferences.system
@@ -82,6 +85,37 @@ def draw_outline_or_region(mode, points, color):
     
     bgl.glEnd()
 
+# --------------------------------------------------------------------
+# Distance between 2 points in 3D space
+# v1: first point
+# v2: second point
+# return: distance
+# --------------------------------------------------------------------
+def distance(v1, v2):
+    return math.sqrt((v2[0] - v1[0]) ** 2 + (v2[1] - v1[1]) ** 2 + (v2[2] - v1[2]) ** 2)
+
+# --------------------------------------------------------------------
+# Interpolate 2 points in 3D space
+# v1: first point
+# v2: second point
+# d1: distance
+# return: interpolate point
+# --------------------------------------------------------------------
+def interpolate3d(v1, v2, d1):
+    # calculate vector
+    v = (v2[0] - v1[0], v2[1] - v1[1], v2[2] - v1[2])
+    # calculate distance between points
+    d0 = distance(v1, v2)
+    # calculate interpolate factor (distance from origin / distance total)
+    # if d1 > d0, the point is projected in 3D space
+    if d0 > 0:
+        x = d1 / d0
+    else:
+        x = d1
+
+    final = (v1[0] + (v[0] * x), v1[1] + (v[1] * x), v1[2] + (v[2] * x))
+    return final
+
 class TextBox(object):
     
     def __init__(self,x,y,width,height,border, margin, message):
@@ -95,7 +129,7 @@ class TextBox(object):
         
         self.width = width * get_dpi_factor()
         self.height = height * get_dpi_factor()
-        self.border = border * get_dpi_factor()
+        self.border = 5 #border * get_dpi_factor()
         self.margin = margin * get_dpi_factor()
         self.spacer = 15 * get_dpi_factor()  # pixels between text lines
         self.is_collapsed = False
@@ -235,7 +269,7 @@ class TextBox(object):
         
         #draw the whole menu background
         line_height = self.txt_height('A')
-        outline = round_box(left, bottom, left +self.width, bottom + self.height, (line_height + 2 * self.spacer)/6)
+        outline = round_box(left, bottom, left +self.width, bottom + self.height, (line_height + .5 * self.spacer)/6)
         draw_outline_or_region('GL_POLYGON', outline, bg_color)
         draw_outline_or_region('GL_LINE_LOOP', outline, border_color)
         
@@ -256,4 +290,38 @@ class TextBox(object):
             blf.position(0,txt_x, txt_y, 0)
             bgl.glColor4f(*txt_color)
             blf.draw(0, line)
+            
+class Line(object):
+    
+    region = None
+    rv3d = None
+    
+    def __init__(self,region,rv3d):
+        self.region = region
+        self.rv3d = rv3d
+    
+    def draw(self,obj_1,obj_2):
+        pass         
+            
+class Dimension(object):
+    
+    region = None
+    rv3d = None
+    
+    def __init__(self,region,rv3d):
+        self.region = region
+        self.rv3d = rv3d
+    
+    def draw(self,obj_1,obj_2):
+        p1 = (obj_1.matrix_world[0][3], obj_1.matrix_world[1][3],obj_1.matrix_world[2][3])
+        p2 = (obj_2.matrix_world[0][3], obj_2.matrix_world[1][3],obj_2.matrix_world[2][3])
+        
+        dist = distance(p1,p2)
+        
+        txtpoint3d = interpolate3d(p1, p2, math.fabs(dist / 2))
+        txtpoint2d = view3d_utils.location_3d_to_region_2d(self.region, self.rv3d, txtpoint3d)
+
+        dimnumber = TextBox(txtpoint2d[0],txtpoint2d[1],100,100,5,5,str(unit.meter_to_active_unit(dist)))
+        dimnumber.draw()
+
             
