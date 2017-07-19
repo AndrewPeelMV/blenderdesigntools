@@ -86,6 +86,7 @@ class Assembly:
         self.obj_x["ISXDIM"] = True
         self.obj_x.empty_draw_type = 'PLAIN_AXES'
         self.obj_x.empty_draw_size = .05
+        self.obj_x.lock_location = (False,True,True)
         bpy.context.scene.objects.link(self.obj_x)
         self.obj_x.parent = self.obj_bp
         
@@ -93,6 +94,7 @@ class Assembly:
         self.obj_y["ISYDIM"] = True
         self.obj_y.empty_draw_type = 'CONE'
         self.obj_y.empty_draw_size = .05
+        self.obj_y.lock_location = (True,False,True)
         bpy.context.scene.objects.link(self.obj_y)
         self.obj_y.parent = self.obj_bp
         
@@ -100,6 +102,7 @@ class Assembly:
         self.obj_z["ISZDIM"] = True
         self.obj_z.empty_draw_type = 'SINGLE_ARROW'
         self.obj_z.empty_draw_size = .3
+        self.obj_z.lock_location = (True,True,False)
         bpy.context.scene.objects.link(self.obj_z)
         self.obj_z.parent = self.obj_bp
         
