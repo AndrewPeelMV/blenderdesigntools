@@ -24,7 +24,7 @@ def draw_modifier(mod,layout,obj):
             layout.prop(mod,'show_expanded',text="",emboss=False)
     
     def draw_apply_close(layout,mod_name):
-        layout.operator('object.modifier_apply',text="",icon='EDIT_VEC',emboss=False).modifier = mod.name
+        layout.operator('object.modifier_apply',text="",icon='EDIT',emboss=False).modifier = mod.name
         layout.operator('object.modifier_remove',text="",icon='PANEL_CLOSE',emboss=False).modifier = mod.name
     
     def draw_array_modifier(layout):
@@ -860,15 +860,16 @@ def draw_object_properties(layout,obj,context):
     props = get_scene_props(bpy.context.scene)
     col = layout.column(align=True)
     box = col.box()
-    row = box.row(align=True)
+    col = box.column(align=True)
+    row = col.row(align=True)
     draw_object_tabs(row,obj)
     box = col.box()
     col = box.column()
     if props.tabs == 'INFO':
         draw_object_info(col,obj)
     if props.tabs == 'DISPLAY':
-        box = col.box()
-        row = box.row()
+#         box = col.box()
+        row = col.row()
         row.prop(obj,'draw_type',expand=True)
         box.prop(obj,'hide_select')
         box.prop(obj,'hide')
@@ -878,17 +879,18 @@ def draw_object_properties(layout,obj,context):
     if props.tabs == 'MATERIAL':
         draw_object_materials(col,obj,context)
     if props.tabs == 'CONSTRAINTS':
-        row = col.row()
-        row.operator_menu_enum("fd_object.add_constraint", "type", icon='CONSTRAINT_DATA')
-        row.operator("fd_object.collapse_all_constraints",text="",icon='FULLSCREEN_EXIT')
+#         row = col.row()
+        col.operator_menu_enum("object.constraint_add", "type", text="Add Constraint",icon='CONSTRAINT_DATA')
+#         row.operator_menu_enum("fd_object.add_constraint", "type", icon='CONSTRAINT_DATA')
+#         row.operator("fd_object.collapse_all_constraints",text="",icon='FULLSCREEN_EXIT')
         for con in obj.constraints:
-            draw_constraint(con,layout,obj)
+            draw_constraint(con,col,obj)
     if props.tabs == 'MODIFIERS':
-        row = col.row()
-        row.operator_menu_enum("fd_object.add_modifier", "type", icon='MODIFIER')
-        row.operator("fd_object.collapse_all_modifiers",text="",icon='FULLSCREEN_EXIT')
+#         row = col.row()
+        col.operator_menu_enum("object.modifier_add", "type",icon='MODIFIER')
+#         row.operator("fd_object.collapse_all_modifiers",text="",icon='FULLSCREEN_EXIT')
         for mod in obj.modifiers:
-            draw_modifier(mod,layout,obj)
+            draw_modifier(mod,col,obj)
     if props.tabs == 'MESHDATA':
         pass
     if props.tabs == 'CURVEDATA':
@@ -906,13 +908,13 @@ def draw_object_properties(layout,obj,context):
 
 def draw_object_tabs(layout,obj):
     props = get_scene_props(bpy.context.scene)
-    layout.prop_enum(props, "tabs", 'INFO', icon='INFO', text="") 
+    layout.prop_enum(props, "tabs", 'INFO', icon="BLANK1" if props.tabs == 'INFO' else "INFO", text="Info" if props.tabs == 'INFO' else "") 
     if obj.type == 'MESH':
-        layout.prop_enum(props, "tabs", 'DISPLAY', icon='RESTRICT_VIEW_OFF', text="") 
-        layout.prop_enum(props, "tabs", 'MATERIAL', icon='MATERIAL', text="") 
-        layout.prop_enum(props, "tabs", 'CONSTRAINTS', icon='CONSTRAINT', text="") 
-        layout.prop_enum(props, "tabs", 'MODIFIERS', icon='MODIFIER', text="") 
-        layout.prop_enum(props, "tabs", 'MESHDATA', icon='MESH_DATA', text="")  
+        layout.prop_enum(props, "tabs", 'DISPLAY', icon="BLANK1" if props.tabs == 'DISPLAY' else "RESTRICT_VIEW_OFF", text="Display" if props.tabs == 'DISPLAY' else "") 
+        layout.prop_enum(props, "tabs", 'MATERIAL', icon="BLANK1" if props.tabs == 'MATERIAL' else "MATERIAL", text="Material" if props.tabs == 'MATERIAL' else "") 
+        layout.prop_enum(props, "tabs", 'CONSTRAINTS', icon="BLANK1" if props.tabs == 'CONSTRAINTS' else "CONSTRAINT", text="Constraints" if props.tabs == 'CONSTRAINTS' else "") 
+        layout.prop_enum(props, "tabs", 'MODIFIERS', icon="BLANK1" if props.tabs == 'MODIFIERS' else "MODIFIER", text="Modifiers" if props.tabs == 'MODIFIERS' else "") 
+        layout.prop_enum(props, "tabs", 'MESHDATA', icon="BLANK1" if props.tabs == 'MESHDATA' else "MESH_DATA", text="Data" if props.tabs == 'MESHDATA' else "")  
     if obj.type == 'CURVE':
         layout.prop_enum(props, "tabs", 'DISPLAY', icon='RESTRICT_VIEW_OFF', text="") 
         layout.prop_enum(props, "tabs", 'MATERIAL', icon='MATERIAL', text="") 
@@ -939,11 +941,11 @@ def draw_object_tabs(layout,obj):
     if obj.type == 'ARMATURE':
         layout.prop_enum(props, "tabs", 'DISPLAY', icon='RESTRICT_VIEW_OFF', text="") 
         layout.prop_enum(props, "tabs", 'CONSTRAINTS', icon='CONSTRAINT', text="")
-    layout.prop_enum(props, "tabs", 'DRIVERS', icon='AUTO', text="")
+    layout.prop_enum(props, "tabs", 'DRIVERS', icon="BLANK1" if props.tabs == 'DRIVERS' else "AUTO", text="Drivers" if props.tabs == 'DRIVERS' else "")
     
 def draw_object_info(layout,obj):
-    box = layout.box()
-    row = box.row()
+#     box = layout.box()
+    row = layout.row()
     row.prop(obj,'name')
     if obj.type in {'MESH','CURVE','LATTICE','TEXT'}:
         pass
@@ -961,7 +963,7 @@ def draw_object_info(layout,obj):
                 has_shape_keys = True
     
     if has_hook_modifier or has_shape_keys:
-        row = box.row()
+        row = layout.row()
         col = row.column(align=True)
         col.label("Dimension")
         col.label("X: " + str(obj.dimensions.x))
@@ -978,13 +980,13 @@ def draw_object_info(layout,obj):
         col.label("Y: " + str(round(math.degrees(obj.rotation_euler.y),4)))
         col.label("Z: " + str(round(math.degrees(obj.rotation_euler.z),4)))
         if has_hook_modifier:
-            box.operator("fd_object.apply_hook_modifiers",icon='HOOK').object_name = obj.name
+            layout.operator("fd_object.apply_hook_modifiers",icon='HOOK').object_name = obj.name
         if has_shape_keys:
-            box.operator("fd_object.apply_shape_keys",icon='SHAPEKEY_DATA').object_name = obj.name
+            layout.operator("fd_object.apply_shape_keys",icon='SHAPEKEY_DATA').object_name = obj.name
     else:
         if obj.type not in {'EMPTY','CAMERA','LAMP'}:
-            box.label('Dimensions:')
-            col = box.column(align=True)
+            layout.label('Dimensions:')
+            col = layout.column(align=True)
             #X
             row = col.row(align=True)
             row.prop(obj,"lock_scale",index=0,text="")
@@ -1007,7 +1009,7 @@ def draw_object_info(layout,obj):
             else:
                 row.prop(obj,"dimensions",index=2,text="Z")
                 
-        col1 = box.row()
+        col1 = layout.row()
         if obj:
             col2 = col1.split()
             col = col2.column(align=True)

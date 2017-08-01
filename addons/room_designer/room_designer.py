@@ -10,6 +10,7 @@ from .opengl import TextBox, Dimension
 # DEFAULT_ROOM_HEIGHT = unit.inch(108)
 # DEFAULT_WALL_DEPTH = unit.inch(6)
 WALL_NAME = "Wall"
+FURNITURE_FOLDER = os.path.join(os.path.dirname(__file__),"assets","Furniture")
 
 """
 PROPERTY STRINGS
@@ -157,6 +158,9 @@ def enum_entry_doors(self,context):
     pcoll = preview_collections["entry_doors"]
     return get_image_enum_previews(icon_dir,pcoll)
 
+def update_entry_door_selection(self,context):
+    print("UPDATE",self.entry_door)
+
 def update_entry_door_category(self,context):
     if preview_collections["entry_doors"]:
         bpy.utils.previews.remove(preview_collections["entry_doors"])
@@ -190,9 +194,25 @@ def update_furniture_category(self,context):
         
     enum_furniture(self,context)
 
+def update_furniture_selection(self,context):
+    print(context.region_data)
+#     override = {'context': context}
+    bpy.ops.room_builder.place_furniture()    
+    
+#     for window in bpy.context.window_manager.windows:
+#         screen = window.screen
+#         for area in screen.areas:
+#             if area.type == 'VIEW_3D':
+#                 override = {'context': context}
+#                 bpy.ops.room_builder.place_furniture(override)
+# #                 bpy.ops.screen.screen_full_area()
+#                 break
+    
+    
+
 preview_collections["molding_categories"] = create_image_preview_collection()   
 preview_collections["molding"] = create_image_preview_collection()   
- 
+
 def enum_molding_categories(self,context):
     if context is None:
         return []
@@ -394,7 +414,8 @@ class PROPS_Room_Builder(bpy.types.PropertyGroup):
                                                  update=update_entry_door_category)
      
     entry_door = bpy.props.EnumProperty(name="Entry Door",
-                                        items=enum_entry_doors)    
+                                        items=enum_entry_doors,
+                                        update=update_entry_door_selection)    
     
     #------ENUM FURNITURE LIBRARY PROPS
     
@@ -405,7 +426,8 @@ class PROPS_Room_Builder(bpy.types.PropertyGroup):
                                                update=update_furniture_category)
      
     furniture = bpy.props.EnumProperty(name="Furniture",
-                                       items=enum_furniture)        
+                                       items=enum_furniture,
+                                       update=update_furniture_selection)        
     
     #------ENUM MOLDING LIBRARY PROPS
     
@@ -414,7 +436,7 @@ class PROPS_Room_Builder(bpy.types.PropertyGroup):
     molding_category = bpy.props.EnumProperty(name="Molding Category",
                                                items=enum_molding_categories,
                                                update=update_molding_category)
-     
+    
     molding = bpy.props.EnumProperty(name="Molding",
                                      items=enum_molding)     
     
@@ -960,6 +982,112 @@ class OPS_draw_mesh(bpy.types.Operator):
         context.area.tag_redraw()
         return {'RUNNING_MODAL'}
 
+class OPS_place_furniture(bpy.types.Operator):
+    bl_idname = "room_builder.place_furniture"
+    bl_label = "Place Furniture"
+    bl_options = {'UNDO'}
+    
+    #READONLY
+    _draw_handle = None
+    mouse_x = 0
+    mouse_y = 0
+    
+    obj = None
+    
+    ray_obj_list = []
+    
+    def cancel_drop(self,context):
+        self.finish(context)
+        
+    def finish(self,context):
+        context.space_data.draw_handler_remove(self._draw_handle, 'WINDOW')
+        context.window.cursor_set('DEFAULT')
+        
+        context.area.tag_redraw()
+        return {'FINISHED'}
+
+    @staticmethod
+    def _window_region(context):
+        window_regions = [region
+                          for region in context.area.regions
+                          if region.type == 'WINDOW']
+        return window_regions[0]
+
+    def draw_opengl(self,context):
+        region = self._window_region(context)
+        
+        help_box = TextBox(
+            x=0,y=0,
+            width=500,height=0,
+            border=10,margin=100,
+            message="Command Help:\nLEFT CLICK: Place Material\nRIGHT CLICK: Placement Options")
+        help_box.x = (self.mouse_x + (help_box.width) / 2 + 10) - region.x
+        help_box.y = (self.mouse_y - 10) - region.y
+
+        help_box.draw()
+    
+    def position_furniture(self,selected_point,selected_obj):
+        self.obj.location = selected_point
+        
+    def modal(self, context, event):
+        context.area.tag_redraw()
+        self.mouse_x = event.mouse_x
+        self.mouse_y = event.mouse_y
+        
+        for area in bpy.context.screen.areas:
+            if area.type == 'VIEW_3D':
+                rv3d = area.spaces.active.region_3d
+                print('FOUND ONE',rv3d)
+                ''' WHY Is context.region_data NONE?
+                '''
+                selected_point, selected_obj = utils.ray_cast(context,event,rv3d,objects=self.ray_obj_list)
+                self.position_furniture(selected_point,selected_obj)
+            
+        if event.type in {'RIGHTMOUSE', 'ESC'}:
+            self.cancel_drop(context)
+            return {'CANCELLED'}
+        
+        if event.type in {'MIDDLEMOUSE', 'WHEELUPMOUSE', 'WHEELDOWNMOUSE'}:
+            return {'PASS_THROUGH'}                 
+            
+        return {'RUNNING_MODAL'}
+
+    def get_furniture(self,context):
+        props = get_roombuilder_props(context)
+        path = os.path.join(FURNITURE_FOLDER,props.furniture_category,props.furniture + ".blend")
+        self.obj = utils.get_object(path)
+
+#     def invoke(self, context, event):
+    def execute(self,context):
+        for window in bpy.context.window_manager.windows:
+            screen = window.screen
+        
+            for area in screen.areas:
+                if area.type == 'VIEW_3D':
+                    print()
+                    break        
+        
+#         self.mouse_x = event.mouse_x
+#         self.mouse_y = event.mouse_y
+        self.ray_obj_list = []
+        self._draw_handle = context.space_data.draw_handler_add(
+            self.draw_opengl, (context,), 'WINDOW', 'POST_PIXEL')
+        
+        self.get_furniture(context)
+        
+        bpy.ops.mesh.primitive_plane_add()
+        plane = context.active_object
+        plane.location = (0,0,0)
+        self.drawing_plane = context.active_object
+        self.drawing_plane.draw_type = 'WIRE'
+        self.drawing_plane.dimensions = (100,100,1)
+        
+        self.ray_obj_list.append(self.drawing_plane)        
+        
+        context.window_manager.modal_handler_add(self)
+        context.area.tag_redraw()
+        return {'RUNNING_MODAL'}
+
 class OPS_place_room_material(bpy.types.Operator):
     bl_idname = "room_builder.place_room_material"
     bl_label = "Place Room Material"
@@ -1117,6 +1245,7 @@ def register():
     
     bpy.utils.register_class(OPS_draw_walls)
     bpy.utils.register_class(OPS_draw_mesh)
+    bpy.utils.register_class(OPS_place_furniture)
     bpy.utils.register_class(OPS_properties)
     bpy.utils.register_class(OPS_temp_operator)
     

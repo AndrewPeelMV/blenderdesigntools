@@ -32,7 +32,8 @@ import bpy
 from . import room_designer
 
 def register():
-    pass
+    room_designer.register()
 
 def unregister():
     pass
+#     room_designer.unregister()
