@@ -472,40 +472,22 @@ class PANEL_Room_Builder_Library(bpy.types.Panel):
     def draw_main_options(self,context,layout,rm_props):
         box = layout.box()
         row = box.row(align=True)
-        row.label("Draw Walls:",icon='MOD_BUILD')      
-        row = box.row(align=True)  
-        row.prop(rm_props,"wall_height",text="Wall Height")
-        row.prop(rm_props,"wall_depth",text="Wall Depth") 
-        row = box.row()
-        row.prop(rm_props,"show_wall_dimensions")
-        row = box.row()
-        row.prop(rm_props,"show_wall_names")
-        split = box.split()
-        row = split.row()
-        row.label("Show Handles:")
-        row = split.row()
-        row.prop(rm_props,"show_wall_obj_x",text="X")
-        row.prop(rm_props,"show_wall_obj_y",text="Y")
-        row.prop(rm_props,"show_wall_obj_z",text="Z")
+        row.label("Draw Rooms:",icon='MOD_BUILD')   
+        row.operator('blender_design.room_properties',icon='SCRIPTWIN',text="",emboss=False)
         
-        row = box.row()    
+        row = box.row(align=True)
         row.scale_y = 1.2   
-        row.operator("room_builder.draw_wall",text="Draw Walls",icon='GREASEPENCIL')     
+        row.operator("room_builder.draw_wall",text="Draw Walls",icon='GREASEPENCIL')            
+        row.operator("room_builder.draw_mesh",text="Draw Plane",icon='MESH_PLANE')            
         
         box = layout.box()
         row = box.row(align=True)
-        row.label("Draw Shapes:",icon='MESH_GRID')     
-        row = box.row()
-        row.scale_y = 1.2
-        row.operator("room_builder.draw_mesh",text="Draw Plane",icon='MESH_PLANE')
-        row.operator("blender_design.temp_operator",text="Draw Cube",icon='MESH_CUBE') #TODO
-        
-        box = layout.box()
-        box.label("Room Lighting:",icon='OUTLINER_OB_LAMP')
+        row.label("Room Lighting:",icon='OUTLINER_OB_LAMP')
+        row.operator('blender_design.room_properties',icon='SCRIPTWIN',text="",emboss=False)
         row = box.row()
         row.scale_y = 1.2
         row.operator('blender_design.temp_operator',text="Place Spot Lamp",icon='LAMP_SPOT')
-        row.operator('blender_design.temp_operator',text="Place Area Lamp",icon='LAMP_AREA')
+        row.operator('room_builder.place_area_lamp',text="Place Area Lamp",icon='LAMP_AREA')
     
     def draw_library(self,context,layout,rm_props):
         box = layout.box()
@@ -982,6 +964,154 @@ class OPS_draw_mesh(bpy.types.Operator):
         context.area.tag_redraw()
         return {'RUNNING_MODAL'}
 
+class OPS_place_area_lamp(bpy.types.Operator):
+    bl_idname = "room_builder.place_area_lamp"
+    bl_label = "Place Area Lamp"
+    bl_options = {'UNDO'}
+    
+    #READONLY
+    _draw_handle = None
+    mouse_x = 0
+    mouse_y = 0
+    
+    drawing_plane = None
+    lamp = None
+    ray_cast_objects = []
+    placed_first_point = False
+    selected_point = (0,0,0)
+    
+    def cancel_drop(self,context):
+        utils.delete_object_and_children(self.lamp)
+        self.finish(context)
+        
+    def finish(self,context):
+        context.space_data.draw_handler_remove(self._draw_handle, 'WINDOW')
+        context.window.cursor_set('DEFAULT')
+        if self.drawing_plane:
+            utils.delete_obj_list([self.drawing_plane])
+        context.area.tag_redraw()
+        return {'FINISHED'}
+
+    @staticmethod
+    def _window_region(context):
+        window_regions = [region
+                          for region in context.area.regions
+                          if region.type == 'WINDOW']
+        return window_regions[0]
+
+    def draw_opengl(self,context):     
+        region = self._window_region(context)
+        
+        help_box = TextBox(
+            x=0,y=0,
+            width=500,height=0,
+            border=10,margin=100,
+            message="Command Help:\nLEFT CLICK: Place Wall\nRIGHT CLICK: Cancel Command")
+        help_box.x = (self.mouse_x + (help_box.width) / 2 + 10) - region.x
+        help_box.y = (self.mouse_y - 10) - region.y
+
+        help_box.draw()
+
+    def event_is_place_first_point(self,event):
+        if event.type == 'LEFTMOUSE' and event.value == 'PRESS' and self.placed_first_point == False:
+            return True
+        elif event.type == 'NUMPAD_ENTER' and event.value == 'PRESS' and self.placed_first_point == False:
+            return True
+        elif event.type == 'RET' and event.value == 'PRESS' and self.placed_first_point == False:
+            return True
+        else:
+            return False
+
+    def event_is_place_second_point(self,event):
+        if event.type == 'LEFTMOUSE' and event.value == 'PRESS' and self.placed_first_point:
+            return True
+        elif event.type == 'NUMPAD_ENTER' and event.value == 'PRESS' and self.placed_first_point:
+            return True
+        elif event.type == 'RET' and event.value == 'PRESS' and self.placed_first_point:
+            return True
+        else:
+            return False
+
+    def position_lamp(self,selected_point):
+        if not self.placed_first_point:
+            self.lamp.location = selected_point
+            self.selected_point = selected_point
+        else:
+            self.lamp.data.size = utils.calc_distance((self.selected_point[0],0,0),(selected_point[0],0,0))
+            self.lamp.data.size_y = utils.calc_distance((0,self.selected_point[1],0),(0,selected_point[1],0))
+            self.lamp.location.x = self.selected_point[0] + ((selected_point[0]/2) - (self.selected_point[0]/2))
+            self.lamp.location.y = self.selected_point[1] + ((selected_point[1]/2) - (self.selected_point[1]/2))
+            self.lamp.location.z = self.selected_point[2]
+#             self.lamp.x_dim(value = selected_point[0] - self.selected_point[0])
+#             self.lamp.y_dim(value = selected_point[1] - self.selected_point[1])
+#             self.lamp.z_dim(value = selected_point[2] - self.selected_point[2])
+            
+    def modal(self, context, event):
+        context.area.tag_redraw()
+        self.mouse_x = event.mouse_x
+        self.mouse_y = event.mouse_y
+        
+        selected_point, selected_obj = utils.get_selection_point(context,event)
+        
+        self.position_lamp(selected_point)
+        
+        if self.event_is_place_second_point(event):
+            return self.finish(context)
+
+        if self.event_is_place_first_point(event):
+            self.placed_first_point = True
+
+        if event.type in {'RIGHTMOUSE', 'ESC'}:
+            self.cancel_drop(context)
+            return {'CANCELLED'}
+        
+        if event.type in {'MIDDLEMOUSE', 'WHEELUPMOUSE', 'WHEELDOWNMOUSE'}:
+            return {'PASS_THROUGH'}        
+        
+        return {'RUNNING_MODAL'}
+        
+    def create_drawing_plane(self,context):
+        bpy.ops.mesh.primitive_plane_add()
+        plane = context.active_object
+        plane.location = (0,0,0)
+        self.drawing_plane = context.active_object
+        self.drawing_plane.draw_type = 'WIRE'
+        self.drawing_plane.dimensions = (100,100,1)
+        self.ray_cast_objects.append(self.drawing_plane)
+
+    def invoke(self, context, event):
+        self.ray_cast_objects = []
+        for obj in bpy.data.objects:
+            if ISWALL in obj or ISROOMMESH in obj:
+                self.ray_cast_objects.append(obj)
+        self.mouse_x = event.mouse_x
+        self.mouse_y = event.mouse_y
+        self._draw_handle = context.space_data.draw_handler_add(
+            self.draw_opengl, (context,), 'WINDOW', 'POST_PIXEL')
+        self.placed_first_point = False
+        self.selected_point = (0,0,0)
+        
+        self.create_drawing_plane(context)
+        
+        lamp = bpy.data.lamps.new("Room Lamp",'AREA')
+        lamp.shape = 'RECTANGLE'
+        obj_lamp = bpy.data.objects.new("Room Lamp", lamp)
+        context.scene.objects.link(obj_lamp)
+        self.lamp = obj_lamp
+        
+        #CREATE CUBE
+#         self.cube = Assembly()
+#         self.cube.create_assembly()
+#         mesh_obj = self.cube.add_mesh("RoomCube")
+#         mesh_obj[ISROOMMESH] = True
+#         self.cube.x_dim(value = 0)
+#         self.cube.y_dim(value = 0)
+#         self.cube.z_dim(value = 0)
+        
+        context.window_manager.modal_handler_add(self)
+        context.area.tag_redraw()
+        return {'RUNNING_MODAL'}
+
 class OPS_place_furniture(bpy.types.Operator):
     bl_idname = "room_builder.place_furniture"
     bl_label = "Place Furniture"
@@ -1169,12 +1299,13 @@ class OPS_properties(bpy.types.Operator):
 
     @classmethod
     def poll(cls, context):
-        if ISWALL in context.object and context.object.parent:
-            return True
-        elif ISROOMMESH in context.object and context.object.parent:
-            return True
-        else:
-            return False
+        if context.object:
+            if ISWALL in context.object and context.object.parent:
+                return True
+            elif ISROOMMESH in context.object and context.object.parent:
+                return True
+            else:
+                return False
 
     def check(self,context):
         return True
@@ -1207,6 +1338,8 @@ class OPS_properties(bpy.types.Operator):
         layout.prop(wall.obj_bp,'location',text="Location")
         layout.prop(wall.obj_bp,'rotation_euler',text="Rotation")
 
+
+
     def draw(self, context):
         layout = self.layout
         box = layout.box()
@@ -1217,6 +1350,88 @@ class OPS_properties(bpy.types.Operator):
             self.draw_wall_properties(box, assembly)
         
         # OPERATOR: Apply Hooks or Edit Mesh
+
+class OPS_lamp_properties(bpy.types.Operator):
+    bl_idname = "blender_design.lamp_properties"
+    bl_label = "Properties"
+
+    obj = None
+
+    @classmethod
+    def poll(cls, context):
+        if context.object and context.object.type == 'LAMP':
+            return True
+        else:
+            return False
+
+    def check(self,context):
+        return True
+
+    def execute(self, context):
+        return {'FINISHED'}
+
+    def invoke(self,context,event):
+        wm = context.window_manager
+        self.obj = context.object
+        
+        return wm.invoke_props_dialog(self, width=400)
+
+    def draw_area_lamp_properties(self,layout):
+        layout.label(self.obj.name)
+        col = layout.column(align=True)
+        col.prop(self.obj,'name',text="Wall Name")
+#         col.separator()
+#         col.prop(wall.obj_x,'location',index=0,text="Wall Length")
+#         col.prop(wall.obj_y,'location',index=1,text="Wall Depth")
+#         col.prop(wall.obj_z,'location',index=2,text="Wall Height")        
+#         layout.prop(wall.obj_bp,'location',text="Location")
+#         layout.prop(wall.obj_bp,'rotation_euler',index=2,text="Rotation")
+
+    def draw(self, context):
+        layout = self.layout
+        box = layout.box()
+        assembly = Assembly(context.object.parent)
+        if self.obj.data.type == 'AREA':
+            self.draw_area_lamp_properties(box)
+        
+        # OPERATOR: Apply Hooks or Edit Mesh
+
+class OPS_room_properties(bpy.types.Operator):
+    bl_idname = "blender_design.room_properties"
+    bl_label = "Room Properties Interface"
+
+    def check(self,context):
+        return True
+
+    def execute(self, context):
+        return {'FINISHED'}
+
+    def invoke(self,context,event):
+        wm = context.window_manager
+        self.obj = context.object
+        
+        return wm.invoke_props_dialog(self, width=400)
+
+    def draw(self, context):
+        layout = self.layout
+        rm_props = get_roombuilder_props(context)
+        
+        box = layout.box()     
+
+        row = box.row(align=True)  
+        row.prop(rm_props,"wall_height",text="Wall Height")
+        row.prop(rm_props,"wall_depth",text="Wall Depth") 
+        row = box.row()
+        row.prop(rm_props,"show_wall_dimensions")
+        row = box.row()
+        row.prop(rm_props,"show_wall_names")
+        split = box.split()
+        row = split.row()
+        row.label("Show Handles:")
+        row = split.row()
+        row.prop(rm_props,"show_wall_obj_x",text="X")
+        row.prop(rm_props,"show_wall_obj_y",text="Y")
+        row.prop(rm_props,"show_wall_obj_z",text="Z")
 
 class OPS_temp_operator(bpy.types.Operator):
     bl_idname = "blender_design.temp_operator"
@@ -1246,7 +1461,10 @@ def register():
     bpy.utils.register_class(OPS_draw_walls)
     bpy.utils.register_class(OPS_draw_mesh)
     bpy.utils.register_class(OPS_place_furniture)
+    bpy.utils.register_class(OPS_place_area_lamp)
     bpy.utils.register_class(OPS_properties)
+    bpy.utils.register_class(OPS_lamp_properties)
+    bpy.utils.register_class(OPS_room_properties)
     bpy.utils.register_class(OPS_temp_operator)
     
     bpy.types.WindowManager.room_builder = bpy.props.PointerProperty(type=WMPROPS_Room_Builder)
@@ -1259,3 +1477,4 @@ def register():
         obj_km = wm.keyconfigs.addon.keymaps.new(name='Object Mode', space_type='EMPTY')
         kmi = obj_km.keymap_items.new('wm.console_toggle', 'HOME', 'PRESS', shift=True)
         kmi = obj_km.keymap_items.new('blender_design.properties', 'RIGHTMOUSE', 'PRESS')
+        kmi = obj_km.keymap_items.new('blender_design.lamp_properties', 'RIGHTMOUSE', 'PRESS')
